@@ -18,6 +18,40 @@ export async function register() {
     const { initializeScheduler } = await import('./src/lib/jobs');
     const { logger } = await import('./src/lib/logger');
 
+    // Check production environment setup
+    const isProduction = process.env.NODE_ENV === 'production';
+    const isRailway = process.env.RAILWAY_ENVIRONMENT !== undefined;
+
+    if (isProduction && isRailway) {
+      logger.info('🚂 Railway deployment detected - validating configuration');
+
+      const warnings: string[] = [];
+
+      // Check for PostgreSQL
+      if (!process.env.DATABASE_URL) {
+        warnings.push('⚠️  WARNING: DATABASE_URL not set - using SQLite (data will be lost on redeploy!)');
+        warnings.push('   → Add PostgreSQL: Railway Dashboard → New → Database → Add PostgreSQL');
+      } else {
+        logger.info('✅ PostgreSQL connected');
+      }
+
+      // Check for Redis
+      if (!process.env.REDIS_URL) {
+        warnings.push('⚠️  WARNING: REDIS_URL not set - jobs will be lost on restart!');
+        warnings.push('   → Add Redis: Railway Dashboard → New → Database → Add Redis');
+      } else {
+        logger.info('✅ Redis connected');
+      }
+
+      // Log all warnings
+      if (warnings.length > 0) {
+        logger.warn('\n' + warnings.join('\n'));
+        logger.warn('📖 See DEPLOYMENT.md for setup instructions');
+      } else {
+        logger.info('✅ All production services configured correctly');
+      }
+    }
+
     logger.info('Initializing scheduler from instrumentation');
     await initializeScheduler();
   }
