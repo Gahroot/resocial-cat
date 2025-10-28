@@ -3,7 +3,7 @@
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Twitter, Youtube, Instagram, Check, X, Loader2, Settings, Wand2 } from 'lucide-react';
+import { Twitter, Youtube, Instagram, Check, X, Loader2, Settings, Wand2, Cpu } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import Link from 'next/link';
@@ -28,6 +28,13 @@ interface YouTubeStatus {
   } | null;
 }
 
+const OPENAI_MODELS = [
+  { id: 'gpt-5', name: 'GPT-5', description: 'Best reasoning & performance' },
+  { id: 'gpt-5-mini', name: 'GPT-5 Mini', description: 'Fast reasoning model' },
+  { id: 'gpt-4o', name: 'GPT-4o', description: 'Fast and reliable' },
+  { id: 'gpt-4o-mini', name: 'GPT-4o Mini', description: 'Cost-effective' },
+] as const;
+
 export default function SettingsPage() {
   const { status } = useSession();
   const [twitterAccount, setTwitterAccount] = useState<TwitterStatus['account']>(null);
@@ -38,6 +45,9 @@ export default function SettingsPage() {
   const [youtubeLoading, setYoutubeLoading] = useState(true);
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [instagramConnected, setInstagramConnected] = useState(false);
+  const [selectedModel, setSelectedModel] = useState<string>('gpt-4o-mini');
+  const [modelLoading, setModelLoading] = useState(true);
+  const [modelSaving, setModelSaving] = useState(false);
 
   // Fetch Twitter and YouTube connection status on mount (only if authenticated)
   useEffect(() => {
@@ -49,12 +59,14 @@ export default function SettingsPage() {
     if (status === 'authenticated') {
       fetchTwitterStatus();
       fetchYoutubeStatus();
+      fetchModelSetting();
     } else {
       // Not logged in, skip API call to avoid 401 error
       setTwitterConnected(false);
       setTwitterLoading(false);
       setYoutubeConnected(false);
       setYoutubeLoading(false);
+      setModelLoading(false);
     }
   }, [status]);
 
@@ -118,6 +130,51 @@ export default function SettingsPage() {
       setYoutubeAccount(null);
     } finally {
       setYoutubeLoading(false);
+    }
+  };
+
+  const fetchModelSetting = async () => {
+    try {
+      setModelLoading(true);
+      const response = await fetch('/api/settings/model', {
+        credentials: 'include',
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setSelectedModel(data.model || 'gpt-4o-mini');
+      } else {
+        setSelectedModel('gpt-4o-mini');
+      }
+    } catch (error) {
+      console.error('Error fetching model setting:', error);
+      setSelectedModel('gpt-4o-mini');
+    } finally {
+      setModelLoading(false);
+    }
+  };
+
+  const handleModelChange = async (model: string) => {
+    try {
+      setModelSaving(true);
+      const response = await fetch('/api/settings/model', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ model }),
+        credentials: 'include',
+      });
+
+      if (response.ok) {
+        setSelectedModel(model);
+      } else {
+        console.error('Failed to save model setting');
+      }
+    } catch (error) {
+      console.error('Error saving model setting:', error);
+    } finally {
+      setModelSaving(false);
     }
   };
 
@@ -236,6 +293,50 @@ export default function SettingsPage() {
             </Button>
           </Link>
         </div>
+
+        {/* AI Model Selection */}
+        <Card className="border-border bg-surface">
+          <CardContent className="py-4">
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex items-center gap-2 flex-shrink-0">
+                <Cpu className="h-4 w-4 text-accent" />
+                <div>
+                  <div className="text-sm font-medium">AI Model</div>
+                  <p className="text-[10px] text-secondary">
+                    Model for generating content
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 min-w-[280px]">
+                {modelLoading ? (
+                  <div className="flex items-center gap-2 h-8 px-3 text-xs text-secondary">
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                    Loading...
+                  </div>
+                ) : (
+                  <>
+                    <select
+                      value={selectedModel}
+                      onChange={(e) => handleModelChange(e.target.value)}
+                      disabled={modelSaving}
+                      className="h-8 flex-1 rounded-md border border-border bg-background px-3 text-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                    >
+                      {OPENAI_MODELS.map((model) => (
+                        <option key={model.id} value={model.id}>
+                          {model.name} - {model.description}
+                        </option>
+                      ))}
+                    </select>
+                    {modelSaving && (
+                      <Loader2 className="h-3 w-3 animate-spin text-accent flex-shrink-0" />
+                    )}
+                  </>
+                )}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Platform Connections - One Row */}
         <div className="grid grid-cols-3 gap-4">

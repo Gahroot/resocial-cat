@@ -2,6 +2,9 @@ import OpenAI from 'openai';
 import { createOpenAICircuitBreaker } from './resilience';
 import { openaiRateLimiter, withRateLimit } from './rate-limiter';
 import { logger } from './logger';
+import { db } from './db';
+import { appSettingsTable } from './schema';
+import { eq } from 'drizzle-orm';
 
 /**
  * OpenAI API Client with Reliability Infrastructure
@@ -21,6 +24,26 @@ export const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY || '',
   timeout: 60000, // 60 second timeout
 });
+
+/**
+ * Get the selected OpenAI model from database settings
+ * Falls back to gpt-4o-mini if not set
+ */
+async function getSelectedModel(): Promise<string> {
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const settings = await (db as any)
+      .select()
+      .from(appSettingsTable)
+      .where(eq(appSettingsTable.key, 'openai_model'))
+      .limit(1);
+
+    return settings[0]?.value || 'gpt-4o-mini';
+  } catch (error) {
+    logger.warn({ error }, 'Failed to fetch model setting from database, using default');
+    return 'gpt-4o-mini';
+  }
+}
 
 async function generateTweetInternal(
   prompt: string,
@@ -53,12 +76,21 @@ If asked to create a thread, write the full content as continuous text - it will
     },
   ];
 
-  const completion = await openai.chat.completions.create({
-    model: 'gpt-4o-mini',
+  const model = await getSelectedModel();
+
+  // GPT-5 models don't support temperature and use max_completion_tokens instead of max_tokens
+  const isGPT5 = model.startsWith('gpt-5') || model.startsWith('o1') || model.startsWith('o3');
+
+  const completionParams: OpenAI.Chat.Completions.ChatCompletionCreateParamsNonStreaming = {
+    model,
     messages,
-    max_tokens: 500, // Increased for thread support
-    temperature: 0.8,
-  });
+    ...(isGPT5
+      ? { max_completion_tokens: 500 }
+      : { max_tokens: 500, temperature: 0.8 }
+    ),
+  };
+
+  const completion = await openai.chat.completions.create(completionParams);
 
   const result = completion.choices[0]?.message?.content || '';
   logger.info({ resultLength: result.length }, 'Tweet generated successfully');
@@ -143,12 +175,21 @@ Third tweet text here (under 280 chars)`;
     },
   ];
 
-  const completion = await openai.chat.completions.create({
-    model: 'gpt-4o-mini',
+  const model = await getSelectedModel();
+
+  // GPT-5 models don't support temperature and use max_completion_tokens instead of max_tokens
+  const isGPT5 = model.startsWith('gpt-5') || model.startsWith('o1') || model.startsWith('o3');
+
+  const completionParams: OpenAI.Chat.Completions.ChatCompletionCreateParamsNonStreaming = {
+    model,
     messages,
-    max_tokens: 1000, // More tokens for multiple tweets
-    temperature: 0.8,
-  });
+    ...(isGPT5
+      ? { max_completion_tokens: 1000 }
+      : { max_tokens: 1000, temperature: 0.8 }
+    ),
+  };
+
+  const completion = await openai.chat.completions.create(completionParams);
 
   const result = completion.choices[0]?.message?.content || '';
 
@@ -289,12 +330,21 @@ Goal: Have a real conversation, not broadcast content.`;
     content: `Generate a reply to this tweet:\n\n"${originalTweet}"`,
   });
 
-  const completion = await openai.chat.completions.create({
-    model: 'gpt-4o-mini',
+  const model = await getSelectedModel();
+
+  // GPT-5 models don't support temperature and use max_completion_tokens instead of max_tokens
+  const isGPT5 = model.startsWith('gpt-5') || model.startsWith('o1') || model.startsWith('o3');
+
+  const completionParams: OpenAI.Chat.Completions.ChatCompletionCreateParamsNonStreaming = {
+    model,
     messages,
-    max_tokens: 100,
-    temperature: 0.7,
-  });
+    ...(isGPT5
+      ? { max_completion_tokens: 100 }
+      : { max_tokens: 100, temperature: 0.7 }
+    ),
+  };
+
+  const completion = await openai.chat.completions.create(completionParams);
 
   const result = completion.choices[0]?.message?.content || '';
   logger.info({ replyLength: result.length }, 'Tweet reply generated successfully');
