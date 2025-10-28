@@ -3,7 +3,6 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { SessionProvider } from "@/components/providers/SessionProvider";
 import { Toaster } from "@/components/ui/sonner";
-import NextTopLoader from "nextjs-toploader";
 import { AppLoader } from "@/components/ui/app-loader";
 import { ChatbotWidget } from "@/components/ui/chatbot-widget";
 
@@ -43,14 +42,6 @@ export default function RootLayout({
         className={`${interHeading.variable} ${interBody.variable} ${inter.variable} antialiased`}
       >
         <AppLoader />
-        <NextTopLoader
-          color="#ff6b35"
-          height={2}
-          showSpinner={false}
-          easing="ease"
-          speed={200}
-          shadow="0 0 10px #ff6b35,0 0 5px #ff6b35"
-        />
         <SessionProvider>{children}</SessionProvider>
         <Toaster />
         <ChatbotWidget />
