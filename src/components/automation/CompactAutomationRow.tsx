@@ -708,7 +708,7 @@ export function CompactAutomationRow({
       {testResult && (
         <div className="absolute right-3 top-3">
           {testResult.success ? (
-            <Check className="h-4 w-4 text-[#10b981] animate-pulse-success" />
+            <Check className="h-4 w-4 text-success-green animate-pulse-success" />
           ) : (
             <X className="h-4 w-4 text-destructive" />
           )}

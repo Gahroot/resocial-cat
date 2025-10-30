@@ -9,7 +9,7 @@ export default function TwitterPage() {
         {/* Header */}
         <div className="space-y-1 animate-fade-in">
           <div className="flex items-center gap-2">
-            <Twitter className="h-6 w-6 text-[#1DA1F2]" />
+            <Twitter className="h-6 w-6 text-twitter-blue" />
             <h1 className="font-black text-2xl tracking-tight">Twitter</h1>
           </div>
           <p className="text-xs text-secondary">Automate tweet generation and posting</p>

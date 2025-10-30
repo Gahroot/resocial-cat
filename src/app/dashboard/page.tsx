@@ -75,10 +75,10 @@ export default function DashboardPage() {
         {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {/* Twitter Stats */}
-          <Card className="border-border bg-surface hover:bg-surface-hover transition-all hover:scale-[1.02] border-l-4 border-l-[#1DA1F2] animate-slide-up">
+          <Card className="border-border bg-surface hover:bg-surface-hover transition-all hover:scale-[1.02] border-l-4 border-l-twitter-blue animate-slide-up">
             <CardHeader className="pb-3">
               <div className="flex items-center gap-2">
-                <Twitter className="h-4 w-4 text-[#1DA1F2]" />
+                <Twitter className="h-4 w-4 text-twitter-blue" />
                 <CardTitle className="text-sm font-medium text-secondary">Twitter</CardTitle>
               </div>
             </CardHeader>
@@ -104,10 +104,10 @@ export default function DashboardPage() {
           </Card>
 
           {/* YouTube Stats */}
-          <Card className="border-border bg-surface hover:bg-surface-hover transition-all hover:scale-[1.02] border-l-4 border-l-[#FF0000] animate-slide-up" style={{ animationDelay: '0.1s' }}>
+          <Card className="border-border bg-surface hover:bg-surface-hover transition-all hover:scale-[1.02] border-l-4 border-l-youtube-red animate-slide-up" style={{ animationDelay: '0.1s' }}>
             <CardHeader className="pb-3">
               <div className="flex items-center gap-2">
-                <Youtube className="h-4 w-4 text-[#FF0000]" />
+                <Youtube className="h-4 w-4 text-youtube-red" />
                 <CardTitle className="text-sm font-medium text-secondary">YouTube</CardTitle>
               </div>
             </CardHeader>
@@ -120,7 +120,7 @@ export default function DashboardPage() {
           </Card>
 
           {/* Instagram Stats */}
-          <Card className="border-border bg-surface hover:bg-surface-hover transition-all hover:scale-[1.02] border-l-4 border-l-[#f09433] animate-slide-up" style={{ animationDelay: '0.2s' }}>
+          <Card className="border-border bg-surface hover:bg-surface-hover transition-all hover:scale-[1.02] border-l-4 border-l-instagram-gradient-start animate-slide-up" style={{ animationDelay: '0.2s' }}>
             <CardHeader className="pb-3">
               <CardTitle className="text-sm font-medium text-secondary">Instagram</CardTitle>
             </CardHeader>
@@ -139,7 +139,7 @@ export default function DashboardPage() {
               <CardContent className="pt-4">
                 <div className="space-y-1">
                   <div className="text-xs text-secondary">Active Jobs</div>
-                  <div className="text-xl font-black text-[#10b981]">
+                  <div className="text-xl font-black text-success-green">
                     <AnimatedCounter value={stats?.system.activeJobs || 0} />
                   </div>
                 </div>

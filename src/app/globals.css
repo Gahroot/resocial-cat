@@ -63,6 +63,13 @@
   /* Accent */
   --color-accent: var(--accent);
 
+  /* Platform brand colors */
+  --color-twitter-blue: var(--twitter-blue);
+  --color-youtube-red: var(--youtube-red);
+  --color-instagram-gradient-start: var(--instagram-gradient-start);
+  --color-instagram-gradient-end: var(--instagram-gradient-end);
+  --color-success-green: var(--success-green);
+
   /* Borders */
   --color-border: var(--border);
   --color-border-hover: var(--border-hover);

@@ -9,7 +9,7 @@ export default function YouTubePage() {
         {/* Header */}
         <div className="space-y-1 animate-fade-in">
           <div className="flex items-center gap-2">
-            <Youtube className="h-6 w-6 text-[#FF0000]" />
+            <Youtube className="h-6 w-6 text-youtube-red" />
             <h1 className="font-black text-2xl tracking-tight">YouTube</h1>
           </div>
           <p className="text-xs text-secondary">Monitor and reply to video comments</p>

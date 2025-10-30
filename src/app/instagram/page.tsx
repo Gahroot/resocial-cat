@@ -9,7 +9,7 @@ export default function InstagramPage() {
         {/* Header */}
         <div className="space-y-1 animate-fade-in">
           <div className="flex items-center gap-2">
-            <div className="h-6 w-6 rounded-md bg-gradient-to-br from-[#f09433] via-[#dc2743] to-[#bc1888] flex items-center justify-center">
+            <div className="h-6 w-6 rounded-md bg-gradient-to-br from-instagram-gradient-start via-[#dc2743] to-instagram-gradient-end flex items-center justify-center">
               <Instagram className="h-4 w-4 text-white" />
             </div>
             <h1 className="font-black text-2xl tracking-tight">Instagram</h1>

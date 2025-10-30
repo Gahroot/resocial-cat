@@ -44,13 +44,13 @@ export function AppLoader() {
           <div className="flex items-center gap-3">
             {/* Platform Icons with staggered animation */}
             <div className="animate-bounce-subtle" style={{ animationDelay: '0s' }}>
-              <Twitter className="h-6 w-6 text-[#1DA1F2]" />
+              <Twitter className="h-6 w-6 text-twitter-blue" />
             </div>
             <div className="animate-bounce-subtle" style={{ animationDelay: '0.1s' }}>
-              <Youtube className="h-6 w-6 text-[#FF0000]" />
+              <Youtube className="h-6 w-6 text-youtube-red" />
             </div>
             <div className="animate-bounce-subtle" style={{ animationDelay: '0.2s' }}>
-              <Instagram className="h-6 w-6 text-[#f09433]" />
+              <Instagram className="h-6 w-6 text-instagram-gradient-start" />
             </div>
           </div>
         </div>
