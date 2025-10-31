@@ -4,8 +4,9 @@ import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { Textarea } from '@/components/ui/textarea';
-import { Play, Loader2, Settings2, Check, X, Filter, History, MessageSquare } from 'lucide-react';
+import { Play, Loader2, Settings2, Check, X, Filter, History, MessageSquare, MoreHorizontal } from 'lucide-react';
 import { SchedulePicker } from './SchedulePicker';
 import { Input } from '@/components/ui/input';
 import { ReplyHistoryTable } from '@/components/twitter/ReplyHistoryTable';
@@ -290,64 +291,91 @@ export function WorkflowTile({
   };
 
   return (
-    <div className="group relative flex flex-col p-6 border border-border rounded-lg bg-surface hover:bg-surface-hover hover:border-border/80 transition-all duration-200">
-      {/* Header */}
-      <div className="flex items-start justify-between gap-4 mb-4">
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 mb-1">
-            <h3 className="font-black text-base tracking-tight">{title}</h3>
-            {/* Test Button */}
-            <Button
-              onClick={handleTest}
-              disabled={testing}
-              variant="outline"
-              size="sm"
-              className="h-6 px-2 text-[10px] gap-1"
-            >
-              {testing ? (
-                <>
-                  <Loader2 className="h-2.5 w-2.5 animate-spin" />
-                  <span>Running...</span>
-                </>
-              ) : (
-                <>
-                  <Play className="h-2.5 w-2.5" />
-                  <span>Test</span>
-                </>
+    <div className="group relative flex flex-col rounded-lg border border-border/50 bg-surface/80 backdrop-blur-sm shadow-sm hover:shadow-lg hover:border-primary/30 transition-all duration-300 overflow-hidden">
+      {/* Status Indicator Bar */}
+      <div className={`h-1 w-full transition-all duration-300 ${
+        enabled
+          ? 'bg-gradient-to-r from-green-500 to-emerald-500'
+          : 'bg-gray-200 dark:bg-gray-700'
+      }`} />
+
+      <div className="p-6">
+        {/* Header */}
+        <div className="flex items-start justify-between gap-4 mb-4">
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 mb-2">
+              <h3 className="font-black text-base tracking-tight">{title}</h3>
+              {/* Status Badge */}
+              {enabled && (
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">
+                  <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+                  Active
+                </span>
               )}
-            </Button>
+            </div>
+            {description && (
+              <p className="text-xs text-secondary line-clamp-2 leading-relaxed">{description}</p>
+            )}
           </div>
-          {description && (
-            <p className="text-xs text-secondary line-clamp-2">{description}</p>
-          )}
+          <Switch
+            checked={enabled}
+            onCheckedChange={async (checked) => {
+              setEnabled(checked);
+              await saveSettings({ enabled: checked });
+              await controlJob(checked ? 'start' : 'stop');
+            }}
+            disabled={loading}
+          />
         </div>
-        <Switch
-          checked={enabled}
-          onCheckedChange={async (checked) => {
-            setEnabled(checked);
-            await saveSettings({ enabled: checked });
-            await controlJob(checked ? 'start' : 'stop');
-          }}
-          disabled={loading}
-        />
-      </div>
 
-      {/* Schedule Info */}
-      <div className="flex items-center gap-2 mb-4 text-xs text-secondary">
-        <Settings2 className="h-3 w-3" />
-        <span>{getScheduleLabel(interval)}</span>
-      </div>
+        {/* Schedule Info */}
+        <div className="flex items-center gap-2 mb-4 px-3 py-2 rounded-md bg-background/50 border border-border/30">
+          <Settings2 className="h-3.5 w-3.5 text-secondary" />
+          <span className="text-xs font-medium text-secondary">{getScheduleLabel(interval)}</span>
+        </div>
 
-      {/* Action Buttons */}
-      <div className="flex flex-wrap items-center gap-2 mt-auto">
-        {/* Schedule Button */}
-        <Dialog open={scheduleOpen} onOpenChange={setScheduleOpen}>
-          <DialogTrigger asChild>
-            <Button variant="ghost" size="sm" className="h-8 px-3 text-xs gap-1.5">
-              <Settings2 className="h-3 w-3" />
-              <span>Schedule</span>
-            </Button>
-          </DialogTrigger>
+        {/* Action Buttons */}
+        <div className="flex items-center justify-between gap-2 mt-auto pt-4 border-t border-border/30">
+          {/* Test Button - Primary CTA */}
+          <Button
+            onClick={handleTest}
+            disabled={testing}
+            size="sm"
+            className="flex-1 h-9 text-xs gap-1.5 bg-primary hover:bg-primary/90 shadow-sm hover:shadow-md transition-all duration-200"
+          >
+            {testing ? (
+              <>
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                <span>Running...</span>
+              </>
+            ) : (
+              <>
+                <Play className="h-3.5 w-3.5" />
+                <span>Test Run</span>
+              </>
+            )}
+          </Button>
+
+          {/* Settings Dropdown Menu */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-9 px-3 border-border/50 hover:bg-background/80 hover:border-primary/50 transition-all"
+              >
+                <MoreHorizontal className="h-4 w-4 text-foreground/70 hover:text-foreground transition-colors" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-48">
+              {/* Schedule Option */}
+              <Dialog open={scheduleOpen} onOpenChange={setScheduleOpen}>
+                <DialogTrigger asChild>
+                  <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                    <Settings2 className="h-4 w-4 mr-2" />
+                    <span>Schedule</span>
+                  </DropdownMenuItem>
+                </DialogTrigger>
           <DialogContent className="sm:max-w-md bg-surface border-border" onCloseAutoFocus={async () => {
             await saveSettings();
             if (enabled) {
@@ -362,17 +390,17 @@ export function WorkflowTile({
               </DialogDescription>
             </DialogHeader>
             <SchedulePicker value={interval} onChange={setInterval} />
-          </DialogContent>
-        </Dialog>
+              </DialogContent>
+            </Dialog>
 
-        {/* Prompt Button */}
-        <Dialog open={promptOpen} onOpenChange={setPromptOpen}>
-          <DialogTrigger asChild>
-            <Button variant="ghost" size="sm" className="h-8 px-3 text-xs gap-1.5">
-              <MessageSquare className="h-3 w-3" />
-              <span>Prompt</span>
-            </Button>
-          </DialogTrigger>
+            {/* Prompt Option */}
+            <Dialog open={promptOpen} onOpenChange={setPromptOpen}>
+              <DialogTrigger asChild>
+                <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                  <MessageSquare className="h-4 w-4 mr-2" />
+                  <span>Edit Prompt</span>
+                </DropdownMenuItem>
+              </DialogTrigger>
           <DialogContent className="sm:max-w-2xl bg-surface border-border" onCloseAutoFocus={() => saveSettings()}>
             <DialogHeader>
               <DialogTitle className="text-base font-black">System Prompt</DialogTitle>
@@ -460,21 +488,23 @@ export function WorkflowTile({
               </div>
             </div>
 
-            <Button onClick={() => { setPromptOpen(false); saveSettings(); }} className="h-8 text-xs">
-              Save
-            </Button>
-          </DialogContent>
-        </Dialog>
-
-        {/* Thread Options Button (only for post-tweets) */}
-        {jobName === 'post-tweets' && (
-          <Dialog open={filtersOpen} onOpenChange={setFiltersOpen}>
-            <DialogTrigger asChild>
-              <Button variant="ghost" size="sm" className="h-8 px-3 text-xs gap-1.5">
-                <Filter className="h-3 w-3" />
-                <span>Options</span>
+              <Button onClick={() => { setPromptOpen(false); saveSettings(); }} className="h-8 text-xs">
+                Save
               </Button>
-            </DialogTrigger>
+            </DialogContent>
+          </Dialog>
+
+          {/* Thread Options (only for post-tweets) */}
+          {jobName === 'post-tweets' && (
+            <>
+              <DropdownMenuSeparator />
+              <Dialog open={filtersOpen} onOpenChange={setFiltersOpen}>
+                <DialogTrigger asChild>
+                  <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                    <Filter className="h-4 w-4 mr-2" />
+                    <span>Thread Options</span>
+                  </DropdownMenuItem>
+                </DialogTrigger>
             <DialogContent className="sm:max-w-md bg-surface border-border" onCloseAutoFocus={() => saveSettings()}>
               <DialogHeader>
                 <DialogTitle className="text-base font-black">Thread Options</DialogTitle>
@@ -560,22 +590,25 @@ export function WorkflowTile({
                 </div>
               </div>
 
-              <Button onClick={() => { setFiltersOpen(false); saveSettings(); }} className="h-8 text-xs">
-                Save Options
-              </Button>
-            </DialogContent>
-          </Dialog>
-        )}
+                <Button onClick={() => { setFiltersOpen(false); saveSettings(); }} className="h-8 text-xs">
+                  Save Options
+                </Button>
+              </DialogContent>
+            </Dialog>
+            </>
+          )}
 
-        {/* Options Button (only for reply-to-tweets) */}
-        {jobName === 'reply-to-tweets' && (
-          <Dialog open={filtersOpen} onOpenChange={setFiltersOpen}>
-            <DialogTrigger asChild>
-              <Button variant="ghost" size="sm" className="h-8 px-3 text-xs gap-1.5">
-                <Filter className="h-3 w-3" />
-                <span>Options</span>
-              </Button>
-            </DialogTrigger>
+          {/* Search Options (only for reply-to-tweets) */}
+          {jobName === 'reply-to-tweets' && (
+            <>
+              <DropdownMenuSeparator />
+              <Dialog open={filtersOpen} onOpenChange={setFiltersOpen}>
+                <DialogTrigger asChild>
+                  <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                    <Filter className="h-4 w-4 mr-2" />
+                    <span>Search Options</span>
+                  </DropdownMenuItem>
+                </DialogTrigger>
             <DialogContent className="sm:max-w-md bg-surface border-border" onCloseAutoFocus={() => saveSettings()}>
               <DialogHeader>
                 <DialogTitle className="text-base font-black">Search Options</DialogTitle>
@@ -668,22 +701,25 @@ export function WorkflowTile({
                 </div>
               </div>
 
-              <Button onClick={() => { setFiltersOpen(false); saveSettings(); }} className="h-8 text-xs">
-                Save Options
-              </Button>
-            </DialogContent>
-          </Dialog>
-        )}
+                <Button onClick={() => { setFiltersOpen(false); saveSettings(); }} className="h-8 text-xs">
+                  Save Options
+                </Button>
+              </DialogContent>
+            </Dialog>
+            </>
+          )}
 
-        {/* History Button (for reply-to-tweets and post-tweets) */}
-        {(jobName === 'reply-to-tweets' || jobName === 'post-tweets') && (
-          <Dialog open={historyOpen} onOpenChange={setHistoryOpen}>
-            <DialogTrigger asChild>
-              <Button variant="ghost" size="sm" className="h-8 px-3 text-xs gap-1.5">
-                <History className="h-3 w-3" />
-                <span>History</span>
-              </Button>
-            </DialogTrigger>
+          {/* History (for reply-to-tweets and post-tweets) */}
+          {(jobName === 'reply-to-tweets' || jobName === 'post-tweets') && (
+            <>
+              <DropdownMenuSeparator />
+              <Dialog open={historyOpen} onOpenChange={setHistoryOpen}>
+                <DialogTrigger asChild>
+                  <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                    <History className="h-4 w-4 mr-2" />
+                    <span>View History</span>
+                  </DropdownMenuItem>
+                </DialogTrigger>
             <DialogContent className="sm:max-w-[90vw] max-h-[85vh] bg-surface border-border overflow-hidden">
               <DialogHeader>
                 <DialogTitle className="text-base font-black">
@@ -705,17 +741,33 @@ export function WorkflowTile({
               </div>
             </DialogContent>
           </Dialog>
-        )}
+            </>
+          )}
+          </DropdownMenuContent>
+        </DropdownMenu>
+        </div>
       </div>
 
       {/* Test Result Indicator */}
       {testResult && (
-        <div className="absolute right-4 top-4">
-          {testResult.success ? (
-            <Check className="h-4 w-4 text-success-green animate-pulse-success" />
-          ) : (
-            <X className="h-4 w-4 text-destructive" />
-          )}
+        <div className="absolute right-6 top-6 z-10">
+          <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full backdrop-blur-sm shadow-lg animate-in fade-in slide-in-from-top duration-300 ${
+            testResult.success
+              ? 'bg-green-100/90 dark:bg-green-900/50 border border-green-200 dark:border-green-800'
+              : 'bg-red-100/90 dark:bg-red-900/50 border border-red-200 dark:border-red-800'
+          }`}>
+            {testResult.success ? (
+              <>
+                <Check className="h-3.5 w-3.5 text-green-600 dark:text-green-400" />
+                <span className="text-xs font-medium text-green-700 dark:text-green-300">Success</span>
+              </>
+            ) : (
+              <>
+                <X className="h-3.5 w-3.5 text-red-600 dark:text-red-400" />
+                <span className="text-xs font-medium text-red-700 dark:text-red-300">Failed</span>
+              </>
+            )}
+          </div>
         </div>
       )}
     </div>

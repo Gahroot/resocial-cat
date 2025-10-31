@@ -168,15 +168,15 @@ export default function ActivityPage() {
           ) : (
             <div className="space-y-3">
               {/* Table */}
-              <div className="border border-border rounded-lg overflow-hidden bg-surface">
+              <div className="border border-border/50 rounded-lg overflow-hidden bg-surface/80 backdrop-blur-sm shadow-sm">
                 <table className="w-full">
                   <thead>
                     {table.getHeaderGroups().map((headerGroup) => (
-                      <tr key={headerGroup.id} className="border-b border-border bg-muted/30">
+                      <tr key={headerGroup.id} className="border-b border-border/50 bg-background/50">
                         {headerGroup.headers.map((header) => (
                           <th
                             key={header.id}
-                            className="px-4 py-2.5 text-left text-xs font-medium text-secondary"
+                            className="px-4 py-3 text-left text-xs font-semibold text-foreground/80 tracking-wide"
                           >
                             {header.isPlaceholder
                               ? null
@@ -190,10 +190,10 @@ export default function ActivityPage() {
                     {table.getRowModel().rows.map((row) => (
                       <tr
                         key={row.id}
-                        className="border-b border-border/50 hover:bg-muted/20 transition-colors"
+                        className="border-b border-border/30 hover:bg-background/30 transition-all duration-200"
                       >
                         {row.getVisibleCells().map((cell) => (
-                          <td key={cell.id} className="px-4 py-3">
+                          <td key={cell.id} className="px-4 py-3.5">
                             {flexRender(cell.column.columnDef.cell, cell.getContext())}
                           </td>
                         ))}
@@ -204,25 +204,25 @@ export default function ActivityPage() {
               </div>
 
               {/* Pagination */}
-              <div className="flex items-center justify-between text-xs text-secondary">
-                <div>
+              <div className="flex items-center justify-between text-xs text-secondary px-1">
+                <div className="font-medium">
                   Showing {table.getRowModel().rows.length} of {logs.length} logs
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-3">
                   <button
                     onClick={() => table.previousPage()}
                     disabled={!table.getCanPreviousPage()}
-                    className="px-3 py-1.5 rounded border border-border hover:border-accent/50 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+                    className="px-4 py-2 rounded-md border border-border/50 hover:border-primary/30 hover:bg-background/50 disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-200 font-medium"
                   >
                     Previous
                   </button>
-                  <span>
+                  <span className="font-medium tabular-nums">
                     Page {table.getState().pagination.pageIndex + 1} of {table.getPageCount()}
                   </span>
                   <button
                     onClick={() => table.nextPage()}
                     disabled={!table.getCanNextPage()}
-                    className="px-3 py-1.5 rounded border border-border hover:border-accent/50 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+                    className="px-4 py-2 rounded-md border border-border/50 hover:border-primary/30 hover:bg-background/50 disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-200 font-medium"
                   >
                     Next
                   </button>

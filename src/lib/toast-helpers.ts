@@ -5,7 +5,26 @@
  */
 
 import { toast } from 'sonner';
-import { formatResetTime } from '@/lib/config/twitter-tiers';
+
+/**
+ * Format a time duration in milliseconds to a human-readable string
+ */
+function formatResetTime(ms: number): string {
+  const seconds = Math.floor(ms / 1000);
+  const minutes = Math.floor(seconds / 60);
+  const hours = Math.floor(minutes / 60);
+  const days = Math.floor(hours / 24);
+
+  if (days > 0) {
+    return `${days}d ${hours % 24}h`;
+  } else if (hours > 0) {
+    return `${hours}h ${minutes % 60}m`;
+  } else if (minutes > 0) {
+    return `${minutes}m`;
+  } else {
+    return `${seconds}s`;
+  }
+}
 
 /**
  * Show a rate limit warning toast
@@ -29,12 +48,6 @@ export function showRateLimitWarning(
   toast.warning(`Paws! ⚠️ Approaching ${limitLabels[limitType]} rate limit`, {
     description: `Time for a quick cat nap! Limit resets in ${resetTime}. 😺`,
     duration: 8000,
-    action: {
-      label: 'View Limits',
-      onClick: () => {
-        window.location.href = '/dashboard/limits';
-      },
-    },
   });
 }
 
@@ -60,12 +73,6 @@ export function showRateLimitError(
   toast.error(`Taking a cat nap 😴 ${limitLabels[limitType]} limit reached`, {
     description: `Time to rest those paws! Resets in ${resetTime}. Automation paused. 💤`,
     duration: 10000,
-    action: {
-      label: 'View Limits',
-      onClick: () => {
-        window.location.href = '/dashboard/limits';
-      },
-    },
   });
 }
 
@@ -82,12 +89,6 @@ export function showTwitter403Error(details?: string) {
       details ||
       'The cat can\'t access this! You may have hit your daily rate limit.',
     duration: 10000,
-    action: {
-      label: 'View Limits',
-      onClick: () => {
-        window.location.href = '/dashboard/limits';
-      },
-    },
   });
 }
 
@@ -104,12 +105,6 @@ export function showTwitter429Error(retryAfter?: number) {
   toast.error('Whoa there, speedy paws! 🐾', {
     description: `Too many requests. The cat needs ${resetTime} to recharge. 😴`,
     duration: 10000,
-    action: {
-      label: 'View Limits',
-      onClick: () => {
-        window.location.href = '/dashboard/limits';
-      },
-    },
   });
 }
 
@@ -151,12 +146,6 @@ export function showLimitInfo(message: string, description?: string) {
   toast.info(message, {
     description,
     duration: 5000,
-    action: {
-      label: 'View Details',
-      onClick: () => {
-        window.location.href = '/dashboard/limits';
-      },
-    },
   });
 }
 

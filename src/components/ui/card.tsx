@@ -5,15 +5,13 @@ import { cn } from "@/lib/utils"
 function Card({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div
+      data-slot="card"
       className={cn(
-        "material-small text-card-foreground",
+        "flex flex-col gap-3 p-4 text-card-foreground",
         className
       )}
-    >
-      <div data-slot="card" className="flex flex-col gap-3">
-        {props.children}
-      </div>
-    </div>
+      {...props}
+    />
   )
 }
 

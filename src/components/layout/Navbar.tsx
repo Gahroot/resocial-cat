@@ -9,7 +9,6 @@ const navigation = [
   { name: 'Social Media', href: '/social-media' },
   { name: 'Content', href: '/content' },
   { name: 'Activity', href: '/dashboard/activity' },
-  { name: 'Limits', href: '/dashboard/limits' },
   { name: 'Settings', href: '/settings' },
 ];
 

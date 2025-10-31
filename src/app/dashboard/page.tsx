@@ -85,15 +85,19 @@ export default function DashboardPage() {
         {/* Main Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
           {/* Successful Runs */}
-          <Card className="transition-all border-l-4 border-l-green-500 animate-slide-up">
-            <CardHeader className="pb-3">
+          <Card className="relative overflow-hidden rounded-lg rounded-lg border border-border/50 bg-surface/80 backdrop-blur-sm shadow-sm hover:shadow-lg hover:border-primary/30 transition-all duration-300 animate-slide-up">
+            {/* Status bar */}
+            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-green-500 to-emerald-500" />
+            <CardHeader className="pb-3 pt-4">
               <div className="flex items-center gap-2">
-                <CheckCircle2 className="h-4 w-4 text-green-500" />
-                <CardTitle className="card-title text-gray-900">Successful Runs</CardTitle>
+                <div className="p-2 rounded-lg bg-green-100 dark:bg-green-900/30">
+                  <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-400" />
+                </div>
+                <CardTitle className="card-title">Successful Runs</CardTitle>
               </div>
             </CardHeader>
             <CardContent className="space-y-1">
-              <div className="card-stat-large text-gray-1000 tabular-nums">
+              <div className="card-stat-large tabular-nums">
                 <AnimatedCounter
                   value={successfulRuns}
                   onEnd={(value) => {
@@ -101,39 +105,47 @@ export default function DashboardPage() {
                   }}
                 />
               </div>
-              <p className="card-label text-gray-900">total successful executions</p>
+              <p className="card-label">total successful executions</p>
             </CardContent>
           </Card>
 
           {/* Failed Runs */}
-          <Card className="transition-all border-l-4 border-l-red-500 animate-slide-up" style={{ animationDelay: '0.1s' }}>
-            <CardHeader className="pb-3">
+          <Card className="relative overflow-hidden rounded-lg rounded-lg border border-border/50 bg-surface/80 backdrop-blur-sm shadow-sm hover:shadow-lg hover:border-primary/30 transition-all duration-300 animate-slide-up" style={{ animationDelay: '0.1s' }}>
+            {/* Status bar */}
+            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-red-500 to-rose-500" />
+            <CardHeader className="pb-3 pt-4">
               <div className="flex items-center gap-2">
-                <XCircle className="h-4 w-4 text-red-500" />
-                <CardTitle className="card-title text-gray-900">Failed Runs</CardTitle>
+                <div className="p-2 rounded-lg bg-red-100 dark:bg-red-900/30">
+                  <XCircle className="h-4 w-4 text-red-600 dark:text-red-400" />
+                </div>
+                <CardTitle className="card-title">Failed Runs</CardTitle>
               </div>
             </CardHeader>
             <CardContent className="space-y-1">
-              <div className="card-stat-large text-gray-1000 tabular-nums">
+              <div className="card-stat-large tabular-nums">
                 <AnimatedCounter value={failedRuns} />
               </div>
-              <p className="card-label text-gray-900">total failed executions</p>
+              <p className="card-label">total failed executions</p>
             </CardContent>
           </Card>
 
           {/* Active Jobs */}
-          <Card className="transition-all border-l-4 border-l-blue-500 animate-slide-up" style={{ animationDelay: '0.2s' }}>
-            <CardHeader className="pb-3">
+          <Card className="relative overflow-hidden rounded-lg rounded-lg border border-border/50 bg-surface/80 backdrop-blur-sm shadow-sm hover:shadow-lg hover:border-primary/30 transition-all duration-300 animate-slide-up" style={{ animationDelay: '0.2s' }}>
+            {/* Status bar */}
+            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 to-cyan-500" />
+            <CardHeader className="pb-3 pt-4">
               <div className="flex items-center gap-2">
-                <Play className="h-4 w-4 text-blue-500" />
-                <CardTitle className="card-title text-gray-900">Active Jobs</CardTitle>
+                <div className="p-2 rounded-lg bg-blue-100 dark:bg-blue-900/30">
+                  <Play className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                </div>
+                <CardTitle className="card-title">Active Jobs</CardTitle>
               </div>
             </CardHeader>
             <CardContent className="space-y-1">
-              <div className="card-stat-large text-blue-500 tabular-nums">
+              <div className="card-stat-large text-blue-600 dark:text-blue-400 tabular-nums">
                 <AnimatedCounter value={activeJobs} />
               </div>
-              <p className="card-label text-gray-900">currently enabled</p>
+              <p className="card-label">currently enabled</p>
             </CardContent>
           </Card>
         </div>
@@ -142,22 +154,22 @@ export default function DashboardPage() {
         <div className="space-y-3 animate-fade-in">
           <h2 className="section-title tracking-tight">System</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            <Card className="transition-all">
-              <CardContent className="pt-4">
-                <div className="space-y-1">
-                  <div className="card-label text-gray-900">Total Executions</div>
-                  <div className="card-stat-medium text-gray-1000 tabular-nums">
+            <Card className="rounded-lg border border-border/50 bg-surface/80 backdrop-blur-sm shadow-sm hover:shadow-lg hover:border-primary/30 transition-all duration-300">
+              <CardContent className="pt-5 pb-4">
+                <div className="space-y-2">
+                  <div className="card-label">Total Executions</div>
+                  <div className="card-stat-medium tabular-nums">
                     <AnimatedCounter value={totalExecutions} />
                   </div>
                 </div>
               </CardContent>
             </Card>
 
-            <Card className="transition-all">
-              <CardContent className="pt-4">
-                <div className="space-y-1">
-                  <div className="card-label text-gray-900">Database</div>
-                  <div className="card-stat-medium text-gray-1000">
+            <Card className="rounded-lg border border-border/50 bg-surface/80 backdrop-blur-sm shadow-sm hover:shadow-lg hover:border-primary/30 transition-all duration-300">
+              <CardContent className="pt-5 pb-4">
+                <div className="space-y-2">
+                  <div className="card-label">Database</div>
+                  <div className="card-stat-medium">
                     {database}
                   </div>
                 </div>

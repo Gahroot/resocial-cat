@@ -313,13 +313,15 @@ export default function SettingsPage() {
       <div className="p-6 space-y-4">
 
         {/* AI Model Selection */}
-        <Card className="border-border bg-surface">
+        <Card className="rounded-lg border border-border/50 bg-surface/80 backdrop-blur-sm shadow-sm hover:shadow-lg hover:border-primary/30 transition-all duration-300">
           <CardContent className="py-4">
             <div className="flex items-center justify-between gap-4">
-              <div className="flex items-center gap-2 flex-shrink-0">
-                <Cpu className="h-4 w-4 text-accent" />
+              <div className="flex items-center gap-3 flex-shrink-0">
+                <div className="p-2 rounded-lg bg-purple-100 dark:bg-purple-900/30">
+                  <Cpu className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+                </div>
                 <div>
-                  <div className="text-sm font-medium">AI Model</div>
+                  <div className="text-sm font-semibold">AI Model</div>
                   <p className="text-[10px] text-secondary">
                     Model for generating content
                   </p>
@@ -328,8 +330,8 @@ export default function SettingsPage() {
 
               <div className="flex items-center gap-2 min-w-[280px]">
                 {modelSaving ? (
-                  <div className="flex items-center gap-2 h-8 px-3 text-xs text-secondary">
-                    <Loader2 className="h-3 w-3 animate-spin" />
+                  <div className="flex items-center gap-2 h-9 px-3 text-xs text-secondary">
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
                     Saving...
                   </div>
                 ) : (
@@ -338,7 +340,7 @@ export default function SettingsPage() {
                       value={selectedModel}
                       onChange={(e) => handleModelChange(e.target.value)}
                       disabled={modelSaving}
-                      className="h-8 flex-1 rounded-md border border-border bg-background px-3 text-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                      className="h-9 flex-1 rounded-md border border-border/50 bg-background/50 px-3 text-xs font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background transition-all"
                     >
                       {OPENAI_MODELS.map((model) => (
                         <option key={model.id} value={model.id}>
@@ -347,7 +349,7 @@ export default function SettingsPage() {
                       ))}
                     </select>
                     {modelSaving && (
-                      <Loader2 className="h-3 w-3 animate-spin text-accent flex-shrink-0" />
+                      <Loader2 className="h-3.5 w-3.5 animate-spin text-accent flex-shrink-0" />
                     )}
                   </>
                 )}
@@ -359,28 +361,36 @@ export default function SettingsPage() {
         {/* Platform Connections - One Row */}
         <div className="grid grid-cols-3 gap-3">
           {/* Twitter */}
-          <Card className="border-border bg-surface">
+          <Card className="relative overflow-hidden rounded-lg border border-border/50 bg-surface/80 backdrop-blur-sm shadow-sm hover:shadow-lg hover:border-primary/30 transition-all duration-300">
+            {twitterConnected && (
+              <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 to-cyan-500" />
+            )}
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <Twitter className="h-4 w-4 text-accent" />
-                  <CardTitle className="text-sm font-medium">Twitter</CardTitle>
+                  <div className={`p-1.5 rounded-lg ${twitterConnected ? 'bg-blue-100 dark:bg-blue-900/30' : 'bg-gray-100 dark:bg-gray-800/30'}`}>
+                    <Twitter className={`h-4 w-4 ${twitterConnected ? 'text-blue-600 dark:text-blue-400' : 'text-gray-500'}`} />
+                  </div>
+                  <CardTitle className="text-sm font-semibold">Twitter</CardTitle>
                 </div>
                 {twitterConnected ? (
-                  <Check className="h-3.5 w-3.5 text-accent" />
+                  <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-green-100 dark:bg-green-900/30">
+                    <Check className="h-3 w-3 text-green-600 dark:text-green-400" />
+                    <span className="text-[10px] font-medium text-green-700 dark:text-green-300">Connected</span>
+                  </div>
                 ) : (
-                  <X className="h-3.5 w-3.5 text-text-muted" />
+                  <X className="h-3.5 w-3.5 text-gray-400" />
                 )}
               </div>
             </CardHeader>
             <CardContent className="space-y-2">
-              <div className="text-[10px] text-secondary">
+              <div className="text-[10px] text-secondary font-medium">
                 {twitterLoading
                   ? 'Checking...'
                   : twitterConnected && twitterAccount?.accountName
                   ? `@${twitterAccount.accountName}`
                   : twitterConnected
-                  ? 'Connected'
+                  ? 'Account connected'
                   : status !== 'authenticated'
                   ? 'Login required'
                   : 'Not connected'}
@@ -388,7 +398,7 @@ export default function SettingsPage() {
               <Button
                 onClick={() => handleConnect('twitter')}
                 variant={twitterConnected ? 'outline' : 'default'}
-                className="w-full h-7 text-xs"
+                className="w-full h-8 text-xs"
                 disabled={twitterLoading || status === 'loading'}
               >
                 {twitterLoading ? (
@@ -408,34 +418,42 @@ export default function SettingsPage() {
           </Card>
 
           {/* YouTube */}
-          <Card className="border-border bg-surface">
+          <Card className="relative overflow-hidden rounded-lg border border-border/50 bg-surface/80 backdrop-blur-sm shadow-sm hover:shadow-lg hover:border-primary/30 transition-all duration-300">
+            {youtubeConnected && (
+              <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-red-500 to-rose-500" />
+            )}
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <Youtube className="h-4 w-4 text-accent" />
-                  <CardTitle className="text-sm font-medium">YouTube</CardTitle>
+                  <div className={`p-1.5 rounded-lg ${youtubeConnected ? 'bg-red-100 dark:bg-red-900/30' : 'bg-gray-100 dark:bg-gray-800/30'}`}>
+                    <Youtube className={`h-4 w-4 ${youtubeConnected ? 'text-red-600 dark:text-red-400' : 'text-gray-500'}`} />
+                  </div>
+                  <CardTitle className="text-sm font-semibold">YouTube</CardTitle>
                 </div>
                 {youtubeConnected ? (
-                  <Check className="h-3.5 w-3.5 text-accent" />
+                  <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-green-100 dark:bg-green-900/30">
+                    <Check className="h-3 w-3 text-green-600 dark:text-green-400" />
+                    <span className="text-[10px] font-medium text-green-700 dark:text-green-300">Connected</span>
+                  </div>
                 ) : (
-                  <X className="h-3.5 w-3.5 text-text-muted" />
+                  <X className="h-3.5 w-3.5 text-gray-400" />
                 )}
               </div>
             </CardHeader>
             <CardContent className="space-y-2">
-              <div className="text-[10px] text-secondary">
+              <div className="text-[10px] text-secondary font-medium">
                 {youtubeLoading
                   ? 'Checking...'
                   : youtubeConnected && youtubeAccount?.accountName
                   ? youtubeAccount.accountName
                   : youtubeConnected
-                  ? 'Connected'
+                  ? 'Account connected'
                   : 'Not connected'}
               </div>
               <Button
                 onClick={() => handleConnect('youtube')}
                 variant={youtubeConnected ? 'outline' : 'default'}
-                className="w-full h-7 text-xs"
+                className="w-full h-8 text-xs"
                 disabled={youtubeLoading}
               >
                 {youtubeLoading ? (
@@ -453,28 +471,28 @@ export default function SettingsPage() {
           </Card>
 
           {/* Instagram */}
-          <Card className="border-border bg-surface">
+          <Card className="relative overflow-hidden rounded-lg border border-border/50 bg-surface/80 backdrop-blur-sm shadow-sm hover:shadow-lg hover:border-primary/30 transition-all duration-300 opacity-75">
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <Instagram className="h-4 w-4 text-accent" />
-                  <CardTitle className="text-sm font-medium">Instagram</CardTitle>
+                  <div className="p-1.5 rounded-lg bg-gray-100 dark:bg-gray-800/30">
+                    <Instagram className="h-4 w-4 text-gray-500" />
+                  </div>
+                  <CardTitle className="text-sm font-semibold">Instagram</CardTitle>
                 </div>
-                {instagramConnected ? (
-                  <Check className="h-3.5 w-3.5 text-accent" />
-                ) : (
-                  <X className="h-3.5 w-3.5 text-text-muted" />
-                )}
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300 font-medium">
+                  Soon
+                </span>
               </div>
             </CardHeader>
             <CardContent className="space-y-2">
-              <div className="text-[10px] text-secondary">
-                {instagramConnected ? 'Connected' : 'Coming soon'}
+              <div className="text-[10px] text-secondary font-medium">
+                {instagramConnected ? 'Account connected' : 'Coming soon'}
               </div>
               <Button
                 onClick={() => handleConnect('instagram')}
-                variant={instagramConnected ? 'outline' : 'default'}
-                className="w-full h-7 text-xs"
+                variant="outline"
+                className="w-full h-8 text-xs"
                 disabled={!instagramConnected}
               >
                 {instagramConnected ? 'Disconnect' : 'Coming Soon'}
