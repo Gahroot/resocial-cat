@@ -5,6 +5,10 @@ import { SessionProvider } from "@/components/providers/SessionProvider";
 import { Toaster } from "@/components/ui/sonner";
 import { AppLoader } from "@/components/ui/app-loader";
 
+// Force dynamic rendering for all pages
+export const dynamic = 'force-dynamic';
+export const dynamicParams = true;
+
 const interHeading = Inter({
   weight: ["500", "600", "700"],
   variable: "--font-heading",
