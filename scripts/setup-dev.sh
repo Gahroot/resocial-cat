@@ -25,10 +25,11 @@ echo -e "${GREEN}✅ Docker is running${NC}"
 if [ ! -f .env.local ]; then
     echo -e "${YELLOW}⚠️  .env.local not found. Creating from example...${NC}"
     cp .env.local.example .env.local
-    echo -e "${YELLOW}📝 Please edit .env.local and add your API keys${NC}"
-    echo -e "${YELLOW}   Required: OPENAI_API_KEY, AUTH_SECRET${NC}"
+    echo -e "${YELLOW}📝 Please edit .env.local and add encryption keys${NC}"
+    echo -e "${YELLOW}   Required: AUTH_SECRET, ENCRYPTION_KEY${NC}"
     echo ""
-    echo -e "${YELLOW}   Generate AUTH_SECRET with: openssl rand -base64 32${NC}"
+    echo -e "${YELLOW}   Generate with: openssl rand -base64 32${NC}"
+    echo -e "${YELLOW}   Note: API keys are managed through the web UI${NC}"
     echo ""
     read -p "Press Enter after you've configured .env.local..."
 fi

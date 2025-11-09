@@ -3,6 +3,11 @@ import { logger } from './logger';
 
 // Validate encryption key on module load (fail fast in production)
 const validateEncryptionKey = (): void => {
+  // Skip validation during build time
+  if (process.env.NEXT_PHASE === 'phase-production-build') {
+    return;
+  }
+
   const key = process.env.ENCRYPTION_KEY;
   const authSecret = process.env.AUTH_SECRET;
 
@@ -34,7 +39,7 @@ const validateEncryptionKey = (): void => {
   }
 };
 
-// Run validation on module load
+// Run validation on module load (but not during build)
 validateEncryptionKey();
 
 // Get encryption key from environment (fallback to AUTH_SECRET in development only)

@@ -51,6 +51,9 @@ const nextConfig: NextConfig = {
     config.ignoreWarnings = [
       /Module not found.*bufferutil/,
       /Module not found.*utf-8-validate/,
+      /Module not found.*encoding/,
+      /Module not found.*@chroma-core\/default-embed/,
+      /Module not found.*pg-native/,
       /conflicting star exports/,
       /A Node\.js API is used/,
       /Package ioredis can't be external/,

@@ -1,4 +1,5 @@
-import * as pdfParse from 'pdf-parse';
+// @ts-expect-error - pdf-parse has inconsistent module exports
+import pdfParse from 'pdf-parse';
 import { logger } from '@/lib/logger';
 
 /**

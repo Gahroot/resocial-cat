@@ -127,13 +127,16 @@ if [ ! -f .env.local ]; then
 
     echo ""
     echo -e "${YELLOW}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-    echo -e "${YELLOW}IMPORTANT: You need to configure your API keys!${NC}"
+    echo -e "${YELLOW}IMPORTANT: You need to configure encryption keys!${NC}"
     echo -e "${YELLOW}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
     echo ""
     echo "Please add the following to .env.local:"
     echo ""
-    echo "1. OPENAI_API_KEY - Get from: https://platform.openai.com/api-keys"
-    echo "2. AUTH_SECRET - Generate with: openssl rand -base64 32"
+    echo "1. AUTH_SECRET - Generate with: openssl rand -base64 32"
+    echo "2. ENCRYPTION_KEY - Generate with: openssl rand -base64 32"
+    echo ""
+    echo "Note: Platform API keys (OpenAI, Twitter, etc.) are managed through"
+    echo "the web UI at Settings → Credentials after setup."
     echo ""
     echo -e "${YELLOW}The script will pause here. Press Enter after you've configured these...${NC}"
     read -p ""
@@ -143,11 +146,6 @@ fi
 
 # Check if required variables are set
 source .env.local 2>/dev/null || true
-
-if [ -z "$OPENAI_API_KEY" ] || [ "$OPENAI_API_KEY" == "sk-your-key-here" ]; then
-    print_warning "OPENAI_API_KEY not configured in .env.local"
-    echo "You'll need to add this before the app will work properly"
-fi
 
 if [ -z "$AUTH_SECRET" ] || [ "$AUTH_SECRET" == "your-secret-here" ]; then
     print_warning "AUTH_SECRET not configured - generating one..."
@@ -160,6 +158,19 @@ if [ -z "$AUTH_SECRET" ] || [ "$AUTH_SECRET" == "your-secret-here" ]; then
         sed -i "s|AUTH_SECRET=.*|AUTH_SECRET=$AUTH_SECRET|" .env.local
     fi
     print_success "Generated AUTH_SECRET"
+fi
+
+if [ -z "$ENCRYPTION_KEY" ] || [ "$ENCRYPTION_KEY" == "your-encryption-key-here" ]; then
+    print_warning "ENCRYPTION_KEY not configured - generating one..."
+    ENCRYPTION_KEY=$(openssl rand -base64 32)
+
+    # Update .env.local with generated key
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+        sed -i '' "s|ENCRYPTION_KEY=.*|ENCRYPTION_KEY=$ENCRYPTION_KEY|" .env.local
+    else
+        sed -i "s|ENCRYPTION_KEY=.*|ENCRYPTION_KEY=$ENCRYPTION_KEY|" .env.local
+    fi
+    print_success "Generated ENCRYPTION_KEY"
 fi
 
 # Ensure DATABASE_URL and REDIS_URL are set for Docker
