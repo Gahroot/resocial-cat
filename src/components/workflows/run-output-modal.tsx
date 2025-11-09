@@ -55,9 +55,46 @@ export function RunOutputModal({
     }
   }
 
-  // Try to get outputDisplay from config.outputDisplay first, then from top-level outputDisplay
-  const configObj = (parsedConfig as Record<string, unknown>)?.config as Record<string, unknown> | undefined;
-  const outputDisplay = (configObj?.outputDisplay || (parsedConfig as Record<string, unknown>)?.outputDisplay) as Record<string, unknown> | undefined;
+  // Try to get config object and outputDisplay
+  // Handle two cases: parsedConfig might be the full workflow object OR just the config object
+  const parsedConfigRecord = parsedConfig as Record<string, unknown> | undefined;
+  const hasConfigProperty = parsedConfigRecord?.config !== undefined;
+  const configObj = hasConfigProperty
+    ? (parsedConfigRecord.config as Record<string, unknown>)
+    : parsedConfigRecord;
+
+  const outputDisplay = configObj?.outputDisplay as Record<string, unknown> | undefined;
+
+  // Extract returnValue - check both correct location (config.returnValue) and legacy location (outputDisplay.returnValue)
+  const returnValue = (configObj?.returnValue as string | undefined) || (outputDisplay?.returnValue as string | undefined);
+
+  // Apply returnValue to extract the specific data from run.output if configured
+  let processedOutput = run.output;
+  if (returnValue && run.output && typeof run.output === 'object') {
+    // Parse template string like "{{sortedProducts}}" or "{{result.data}}"
+    const match = returnValue.match(/^\{\{([^}]+)\}\}$/);
+    if (match) {
+      const path = match[1].trim();
+      const keys = path.split('.');
+      let value: unknown = run.output;
+
+      for (const key of keys) {
+        if (value && typeof value === 'object' && key in value) {
+          value = (value as Record<string, unknown>)[key];
+        } else {
+          // Path not found, use original output
+          console.warn(`[RunOutputModal] returnValue path "${path}" not found in output, using full output`);
+          value = run.output;
+          break;
+        }
+      }
+
+      console.log(`[RunOutputModal] Applied returnValue: "${returnValue}", extracted:`, Array.isArray(value) ? `array[${value.length}]` : typeof value);
+      processedOutput = value;
+    }
+  } else if (returnValue) {
+    console.log(`[RunOutputModal] returnValue configured but not applied:`, { returnValue, hasOutput: !!run.output, isObject: typeof run.output === 'object' });
+  }
 
   const outputDisplayHint = outputDisplay
     ? ({
@@ -77,7 +114,7 @@ export function RunOutputModal({
         </DialogDescription>
         {run.status === 'success' && run.output !== undefined ? (
           <OutputRenderer
-            output={run.output}
+            output={processedOutput}
             modulePath={modulePath}
             displayHint={outputDisplayHint}
           />
