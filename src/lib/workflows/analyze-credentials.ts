@@ -430,9 +430,11 @@ export function analyzeWorkflowCredentials(
         // Special handling for AI SDK (can use multiple providers)
         if (modulePath.includes('ai-sdk')) {
           const inputs = s.inputs as Record<string, unknown> | undefined;
-          const provider = inputs?.provider as string | undefined;
-          const model = inputs?.model as string | undefined;
-          const apiKey = inputs?.apiKey as string | undefined;
+          // AI SDK inputs can be at top level or nested in 'options'
+          const options = (inputs?.options as Record<string, unknown> | undefined) || inputs;
+          const provider = options?.provider as string | undefined;
+          const model = options?.model as string | undefined;
+          const apiKey = options?.apiKey as string | undefined;
 
           // Check if apiKey references a variable
           if (apiKey && typeof apiKey === 'string' && apiKey.includes('{{user.')) {

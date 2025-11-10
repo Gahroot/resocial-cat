@@ -94,6 +94,28 @@ export function RunOutputModal({
     }
   } else if (returnValue) {
     console.log(`[RunOutputModal] returnValue configured but not applied:`, { returnValue, hasOutput: !!run.output, isObject: typeof run.output === 'object' });
+  } else if (!returnValue && run.output && typeof run.output === 'object' && !Array.isArray(run.output)) {
+    // No returnValue specified - auto-filter internal variables
+    console.log('[RunOutputModal] No returnValue - applying auto-detection filter');
+    const internalKeys = ['user', 'trigger'];
+    const filteredOutput: Record<string, unknown> = {};
+
+    for (const [key, value] of Object.entries(run.output as Record<string, unknown>)) {
+      // Skip internal variables
+      if (internalKeys.includes(key)) continue;
+      // Skip credential variables
+      if (key.includes('_apikey') || key.includes('_api_key')) continue;
+      // Skip known credential platforms
+      if (['openai', 'anthropic', 'youtube', 'slack', 'twitter', 'github', 'reddit'].includes(key)) continue;
+
+      filteredOutput[key] = value;
+    }
+
+    // If we have filtered variables, use them; otherwise use original (backward compat)
+    if (Object.keys(filteredOutput).length > 0) {
+      console.log('[RunOutputModal] Filtered output keys:', Object.keys(filteredOutput));
+      processedOutput = filteredOutput;
+    }
   }
 
   const outputDisplayHint = outputDisplay

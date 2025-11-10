@@ -427,6 +427,43 @@ function fixOutputDisplayReturnValue(workflow: Workflow): void {
 }
 
 /**
+ * Suggest returnValue if missing (non-chat workflows only)
+ */
+function suggestReturnValue(workflow: Workflow): void {
+  const config = workflow.config as { returnValue?: string };
+  const trigger = workflow.trigger;
+
+  // Skip chat workflows - they auto-return the AI response
+  if (trigger?.type === 'chat') {
+    return;
+  }
+
+  // Skip if returnValue already exists
+  if (config.returnValue) {
+    return;
+  }
+
+  // Get the last step with an outputAs
+  const lastStep = workflow.config.steps
+    .slice()
+    .reverse()
+    .find(step => step.outputAs);
+
+  if (lastStep?.outputAs) {
+    fixes.push({
+      stepId: 'config',
+      type: 'MISSING_RETURN_VALUE',
+      before: `(no returnValue specified)`,
+      after: `"returnValue": "{{${lastStep.outputAs}}}"`,
+      description: `Add returnValue to avoid exposing internal variables. Suggested: {{${lastStep.outputAs}}}`,
+    });
+
+    // Note: We don't auto-apply this fix since it's a suggestion
+    // User should decide which variable to return
+  }
+}
+
+/**
  * Main auto-fix function
  */
 function autoFixWorkflow(workflow: Workflow): Workflow {
@@ -441,6 +478,7 @@ function autoFixWorkflow(workflow: Workflow): Workflow {
   fixOutputDisplayReturnValue(workflow);
   fixVariableNameTypos(workflow);
   fixModulePathCase(workflow);
+  suggestReturnValue(workflow); // Note: This is a suggestion, not auto-applied
 
   return workflow;
 }

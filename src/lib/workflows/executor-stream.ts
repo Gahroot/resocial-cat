@@ -214,13 +214,42 @@ export async function executeWorkflowWithProgress(
     const completedAt = new Date();
     const totalDuration = completedAt.getTime() - startedAt.getTime();
 
+    // Calculate final output BEFORE saving to database
+    // Return final output - use returnValue if specified, otherwise auto-detect
+    let finalOutput: unknown = context.variables;
+    if (config.returnValue) {
+      finalOutput = resolveValue(config.returnValue, context.variables);
+    } else {
+      // Auto-detect: Filter out internal variables and return only step outputs
+      // Internal variables: user, trigger, credentials (youtube_apikey, openai, etc.)
+      const internalKeys = ['user', 'trigger'];
+      const filteredVars: Record<string, unknown> = {};
+
+      for (const [key, value] of Object.entries(context.variables as Record<string, unknown>)) {
+        // Skip internal variables
+        if (internalKeys.includes(key)) continue;
+        // Skip credential variables (they're from user credentials table)
+        if (key.includes('_apikey') || key.includes('_api_key')) continue;
+        // Skip if it's a known credential platform
+        if (['openai', 'anthropic', 'youtube', 'slack', 'twitter', 'github', 'reddit'].includes(key)) continue;
+
+        filteredVars[key] = value;
+      }
+
+      // If we have filtered variables, use them; otherwise return all (backward compat)
+      if (Object.keys(filteredVars).length > 0) {
+        finalOutput = filteredVars;
+      }
+    }
+
+    // Save filtered output to database
     await db
       .update(workflowRunsTable)
       .set({
         status: 'success',
         completedAt,
         duration: totalDuration,
-        output: context.variables ? JSON.stringify(context.variables) : null,
+        output: finalOutput ? JSON.stringify(finalOutput) : null,
       })
       .where(eq(workflowRunsTable.id, runId));
 
@@ -235,13 +264,6 @@ export async function executeWorkflowWithProgress(
       .where(eq(workflowsTable.id, workflowId));
 
     logger.info({ workflowId, runId, duration: totalDuration }, 'Workflow execution completed');
-
-    // Emit workflow completed event
-    // Return final output - use returnValue if specified, otherwise return all variables
-    let finalOutput: unknown = context.variables;
-    if (config.returnValue) {
-      finalOutput = resolveValue(config.returnValue, context.variables);
-    }
 
     onProgress?.({
       type: 'workflow_completed',
@@ -345,6 +367,7 @@ function getNestedValue(obj: Record<string, unknown>, path: string): unknown {
 
 const CATEGORY_FOLDER_MAP: Record<string, string> = {
   'communication': 'communication',
+  'social': 'social',
   'social media': 'social',
   'ai': 'ai',
   'data': 'data',

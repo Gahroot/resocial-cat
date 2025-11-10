@@ -207,7 +207,7 @@ export async function executeWorkflow(
 
     logger.info({ workflowId, runId, duration: completedAt.getTime() - startedAt.getTime() }, 'Workflow execution completed');
 
-    // Return final output - use returnValue if specified, otherwise return all variables
+    // Return final output - use returnValue if specified, otherwise auto-detect
     let finalOutput: unknown = context.variables;
     if (config.returnValue) {
       logger.info({ returnValue: config.returnValue }, 'EXECUTOR - Using returnValue');
@@ -218,7 +218,28 @@ export async function executeWorkflow(
         length: Array.isArray(finalOutput) ? finalOutput.length : undefined
       }, 'EXECUTOR - finalOutput resolved');
     } else {
-      logger.info('EXECUTOR - No returnValue config, returning all variables');
+      logger.info('EXECUTOR - No returnValue config, auto-detecting output');
+      // Auto-detect: Filter out internal variables and return only step outputs
+      // Internal variables: user, trigger, credentials (youtube_apikey, openai, etc.)
+      const internalKeys = ['user', 'trigger'];
+      const filteredVars: Record<string, unknown> = {};
+
+      for (const [key, value] of Object.entries(context.variables as Record<string, unknown>)) {
+        // Skip internal variables
+        if (internalKeys.includes(key)) continue;
+        // Skip credential variables (they're from user credentials table)
+        if (key.includes('_apikey') || key.includes('_api_key')) continue;
+        // Skip if it's a known credential platform
+        if (['openai', 'anthropic', 'youtube', 'slack', 'twitter', 'github', 'reddit'].includes(key)) continue;
+
+        filteredVars[key] = value;
+      }
+
+      // If we have filtered variables, use them; otherwise return all (backward compat)
+      if (Object.keys(filteredVars).length > 0) {
+        finalOutput = filteredVars;
+        logger.info({ filteredKeys: Object.keys(filteredVars) }, 'EXECUTOR - Filtered output variables');
+      }
     }
 
     return { success: true, output: finalOutput };
@@ -324,6 +345,7 @@ function getNestedValue(obj: Record<string, unknown>, path: string): unknown {
  */
 const CATEGORY_FOLDER_MAP: Record<string, string> = {
   'communication': 'communication',
+  'social': 'social',
   'social media': 'social',
   'ai': 'ai',
   'data': 'data',

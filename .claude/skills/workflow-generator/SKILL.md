@@ -19,37 +19,10 @@ Activate this skill when the user expresses intent to create, build, or automate
 
 ## Pre-flight Check
 
-**BEFORE starting workflow generation, verify that required services are running:**
-
+Verify Docker (postgres/redis) and Next.js are running. If not:
 ```bash
-# Check Docker containers
-docker ps --filter "name=social-cat" --format "table {{.Names}}\t{{.Status}}"
-
-# Check if Next.js dev server is running
-curl -s http://localhost:3000/api/health || echo "Dev server not running"
+npm run docker:start && npm run dev:full
 ```
-
-**Required services:**
-- ✅ `social-cat-postgres` - Must be "Up" and "healthy"
-- ✅ `social-cat-redis` - Must be "Up" and "healthy"
-- ✅ Next.js dev server - Must respond on `http://localhost:3000`
-
-**If any service is not running:**
-
-1. **Docker containers not running:**
-   ```bash
-   npm run docker:start
-   ```
-
-2. **Dev server not running:**
-   ```bash
-   npm run dev:full
-   ```
-   Wait for "Ready" or "Local: http://localhost:3000"
-
-3. **Re-check services** after starting them
-
-**Only proceed once all services are confirmed running.**
 
 ---
 
@@ -92,219 +65,54 @@ npx tsx scripts/search-modules.ts "keyword"
 - Mention "Slack" → search `"slack"`
 - Mention "email" → search `"email"`
 
-**IMPORTANT: Pay attention to the function signature in search results!**
+**Pay attention to the function signature** - it shows parameter format and whether it uses params wrapper.
 
-The search output shows:
-- Function name
-- Description
-- **Signature** (this tells you parameter format!)
-- Warning if it uses params wrapper
-- Example usage
-
-**IMPORTANT: Module Authentication Selection**
-
-When you find multiple versions of a module (e.g., `searchVideos` vs `searchVideosWithApiKey`), choose based on operation type:
-
-**Prefer API Key version (`*WithApiKey`) for:**
-- Read-only operations: search, get, fetch, list, view
-- Public data access
-- Examples: `searchVideos`, `getVideoDetails`, `getTrendingRepositories`
-- Implementation: Add `apiKey: "{{credential.SERVICE_api_key}}"` parameter
-
-**Use OAuth version (without `WithApiKey`) for:**
-- Write operations: post, upload, create, update, delete
-- Private/authenticated data access
-- Examples: `postTweet`, `uploadVideo`, `sendMessage`
-- Implementation: Credentials auto-injected, just use the function
-
-This ensures users only need OAuth when absolutely necessary.
+**Module Authentication:** Use `*WithApiKey` variants for read operations when available (add `apiKey: "{{credential.SERVICE_api_key}}"` parameter).
 
 ### 4. Understand Parameter Format
 
-**CRITICAL: The executor has specific rules for how to pass parameters to functions.**
-
-When you search for a module, look at its **function signature** to determine the correct format:
-
-#### Format Decision Tree
-
-**1. Object Destructuring in Parameters**
-```typescript
-// Signature: chat({ messages, model, provider })
-```
-→ Pass parameters directly as object properties:
-```json
-"inputs": {
-  "messages": [...],
-  "model": "gpt-4o-mini",
-  "provider": "openai"
-}
-```
-
-**2. Named Parameter with Type**
-```typescript
-// Signature: processData(options: DataOptions)
-```
-→ Wrap in parameter name:
-```json
-"inputs": {
-  "options": {
-    "data": [...],
-    "format": "json"
-  }
-}
-```
-
-**3. Multiple Separate Parameters**
-```typescript
-// Signature: send(channel: string, text: string, urgent: boolean)
-```
-→ Use parameter names as keys:
-```json
-"inputs": {
-  "channel": "#general",
-  "text": "Hello",
-  "urgent": false
-}
-```
-
-**4. Params Wrapper Pattern**
-```typescript
-// Signature: transform(params: { items, count })
-```
-→ Wrap in "params":
-```json
-"inputs": {
-  "params": {
-    "items": [...],
-    "count": 5
-  }
-}
-```
-
-**How to tell which format to use:**
-- Look at the search results signature
+Check function signature to determine format:
 - Object destructuring `{ param1, param2 }` → direct properties
 - Named parameter `(options: Type)` → wrap with parameter name
 - Params keyword `(params: { ... })` → wrap with "params"
 
-**CRITICAL: AI SDK Module Parameter Format**
-
-All AI SDK modules (`ai.ai-sdk.*`) use named parameter format:
-
+**AI SDK modules (`ai.ai-sdk.*`) ALWAYS use `options` wrapper:**
 ```json
-// ✅ ALWAYS use this format for AI SDK:
 {
   "module": "ai.ai-sdk.generateText",
   "inputs": {
     "options": {
-      "prompt": "Your prompt here",
-      "model": "gpt-4o-mini",
-      "provider": "openai",
-      "temperature": 0.7,
-      "maxTokens": 500
-    }
-  }
-}
-```
-
-**Common AI SDK modules requiring `options` wrapper:**
-- `ai.ai-sdk.generateText`
-- `ai.ai-sdk.chat`
-- `ai.ai-sdk.streamText`
-
-**If you see parameter mismatch error for ANY `ai.ai-sdk.*` module, you forgot the `options` wrapper.**
-
-### 4.5. Understanding Module Return Values
-
-**CRITICAL: Different modules return different data structures. You MUST know what they return to reference them correctly.**
-
-#### AI SDK Return Format
-
-All AI SDK modules return an **object**, not a plain string:
-
-```typescript
-{
-  content: string,        // The actual generated text
-  usage: {
-    promptTokens: number,
-    completionTokens: number,
-    totalTokens: number
-  },
-  finishReason: string,
-  model: string,
-  provider: string
-}
-```
-
-**When referencing AI SDK outputs, access `.content`:**
-
-```json
-// Step 1: Generate text
-{
-  "id": "step1",
-  "module": "ai.ai-sdk.generateText",
-  "inputs": {
-    "options": {
-      "prompt": "Write a summary",
+      "prompt": "...",
       "model": "gpt-4o-mini",
       "provider": "openai"
     }
-  },
-  "outputAs": "aiSummary"
-}
-
-// Step 2: Use the generated text
-{
-  "id": "step2",
-  "module": "utilities.string-utils.wordCount",
-  "inputs": {
-    "str": "{{aiSummary.content}}"  // ✅ Access .content property
-    // NOT: "{{aiSummary}}"          // ❌ This passes the whole object
   }
 }
 ```
 
-**Common mistakes:**
-- ❌ `"str": "{{aiOutput}}"` → Passes object, causes "str.split is not a function"
-- ✅ `"str": "{{aiOutput.content}}"` → Passes string correctly
+### 4.5. Understanding Module Return Values
 
-#### Array Utilities Return Format
-
-Array utilities return arrays or primitives:
-
-- `range()` → `[1, 2, 3, 4, 5]`
-- `sum()` → `15` (number)
-- `pluck()` → `["value1", "value2"]` (array of values)
-- `zipToObjects()` → `[{ id: 1, name: "A" }, { id: 2, name: "B" }]` (array of objects)
-
-#### String Utilities Return Format
-
-String utilities return strings or numbers:
-
-- `concat()` → `"combined string"`
-- `wordCount()` → `42` (number)
-- `truncate()` → `"truncated text..."`
-
-#### Special Case: zipToObjects
-
-`zipToObjects` requires **all fields to be arrays of equal length**:
-
+**AI SDK modules return objects with `.content` property:**
 ```json
-// ❌ WRONG - String values get treated as character arrays
+// Use .content when passing to string functions
+"str": "{{aiOutput.content}}"  // ✅
+"str": "{{aiOutput}}"           // ❌ Causes "str.split is not a function"
+```
+
+**zipToObjects requires ALL fields as arrays of equal length:**
+```json
+// ✅ CORRECT - Repeat values for each row
 {
   "fieldArrays": {
     "id": [1, 2, 3],
-    "title": ["Post 1", "Post 2", "Post 3"],
-    "summary": "{{aiSummary.content}}"  // This creates 100+ objects!
+    "summary": ["{{ai.content}}", "{{ai.content}}", "{{ai.content}}"]
   }
 }
-
-// ✅ CORRECT - Repeat the value for each row
+// ❌ WRONG - String creates character array
 {
   "fieldArrays": {
     "id": [1, 2, 3],
-    "title": ["Post 1", "Post 2", "Post 3"],
-    "summary": ["{{aiSummary.content}}", "{{aiSummary.content}}", "{{aiSummary.content}}"]
+    "summary": "{{ai.content}}"  // Creates 100+ objects!
   }
 }
 ```
@@ -433,87 +241,14 @@ Save using the Write tool with the relative path.
 
 ### 7.5. Auto-Fix Common Issues
 
-**CRITICAL: After generating the workflow JSON, ALWAYS run the auto-fix script:**
+**After generating the workflow JSON, ALWAYS run auto-fix:**
 
 ```bash
 npx tsx scripts/auto-fix-workflow.ts workflow/{filename}
+npx tsx scripts/auto-fix-workflow.ts workflow/{filename} --write  # Apply fixes
 ```
 
-This automatically detects and fixes:
-- ✅ AI SDK missing `options` wrapper
-- ✅ AI SDK outputs missing `.content`
-- ✅ zipToObjects string fields (converts to arrays)
-- ✅ Array function parameter mismatches
-- ✅ Variable name typos (spaces, case)
-- ✅ Module path case sensitivity (category/namespace lowercase, function camelCase preserved)
-- ✅ Common function name case errors (e.g., `generatetext` → `generateText`)
-
-**If fixes are found, apply them:**
-```bash
-npx tsx scripts/auto-fix-workflow.ts workflow/{filename} --write
-```
-
-The script will show you exactly what it fixed with before/after examples.
-
-### 7.6. Pre-Submission Checklist (Manual Verification)
-
-**After auto-fix, verify these edge cases manually:**
-
-✅ **AI SDK modules have `options` wrapper:**
-```json
-"inputs": {
-  "options": {  // ✅ Must have this for ai.ai-sdk.*
-    "prompt": "...",
-    "model": "gpt-4o-mini"
-  }
-}
-```
-
-✅ **AI SDK outputs use `.content` when passed to string functions:**
-```json
-// If step outputs AI text as "summary":
-"str": "{{summary.content}}"  // ✅ Correct
-// NOT: "{{summary}}"           // ❌ Passes object
-```
-
-✅ **Variable names have NO SPACES:**
-```json
-"outputAs": "shuffledNumbers"   // ✅ Correct
-// NOT: "shuffled Numbers"       // ❌ Typo breaks references
-```
-
-✅ **Variable references match outputAs exactly:**
-```json
-// Step 1:
-"outputAs": "redditPosts"
-// Step 2:
-"array": "{{redditPosts}}"      // ✅ Exact match
-// NOT: "{{reddit_posts}}"       // ❌ Case/naming mismatch
-```
-
-✅ **zipToObjects fields are all arrays of equal length:**
-```json
-"fieldArrays": {
-  "id": [1, 2, 3],
-  "name": ["A", "B", "C"],
-  "score": [10, 20, 30],
-  "summary": ["{{text}}", "{{text}}", "{{text}}"]  // ✅ Array
-  // NOT: "summary": "{{text}}"                    // ❌ String
-}
-```
-
-✅ **Array function parameters match signature:**
-- `intersection` → `{ "arrays": [...] }`
-- `difference` → `{ "arr1": "...", "arr2": "..." }`
-- `union` → `{ "arr1": "...", "arr2": "..." }`
-
-✅ **Module paths are lowercase:**
-```json
-"module": "social.twitter.postTweet"  // ✅
-// NOT: "Social.Twitter.PostTweet"    // ❌
-```
-
-**If you catch any of these issues, fix them BEFORE saving.**
+Auto-fix detects: AI SDK `options` wrapper, `.content` access, zipToObjects arrays, variable typos, module path casing, **missing `returnValue`** (suggests which variable to return).
 
 ### 8. Auto-Fix and Validate the Workflow
 
@@ -755,339 +490,22 @@ Output Display Types:
 - **markdown** - Formatted text (requires `returnValue` with string)
 - **json** - Raw JSON (any type)
 
-## Available Module Categories
-
-The platform has **900+ functions** across **140 modules** in these categories:
-
-1. **Communication** - Email, Slack, Discord, Telegram, WhatsApp, Teams, Twilio
-2. **Social Media** - Twitter, Reddit, YouTube, GitHub, Instagram, TikTok, LinkedIn
-3. **AI** - OpenAI, Anthropic, AI SDK, Cohere, HuggingFace
-4. **Data** - Google Sheets, Airtable, Notion, PostgreSQL, MongoDB, MySQL
-5. **Business** - Stripe, Shopify, Salesforce, HubSpot, QuickBooks
-6. **Content** - WordPress, Medium, Dev.to, Ghost
-7. **Developer** - GitHub, GitLab, Vercel, Netlify, Sentry
-8. **Media** - Cloudinary, YouTube, Spotify, Vimeo
-9. **Lead Generation** - Apollo, Clearbit, Hunter, ZoomInfo
-10. **Utilities** - HTTP, RSS, CSV, JSON, Array/String/Date utils, encryption, compression
-
-For detailed module listings, see `reference.md` in this skill directory.
 
 ## Troubleshooting Common Errors
 
-### Parameter Mismatch Errors
+**Parameter Mismatch:** AI SDK modules need `options` wrapper. Check function signature.
 
-**Error:** `Parameter mismatch for ai.ai-sdk.chat: Function expects [options] but workflow provided [model, messages, provider]`
+**AI SDK String Errors:** Use `.content` property when passing to string functions: `"{{aiOutput.content}}"` not `"{{aiOutput}}"`.
 
-**Cause:** The function expects inputs wrapped with a parameter name, but you provided them as direct properties.
+**zipToObjects Bug:** String values create character arrays. Wrap in arrays: `["{{text}}", "{{text}}", ...]` not `"{{text}}"`.
 
-**Fix:** Look at the function signature:
-- If it's `chat(options: Type)` → wrap in `{ "options": { your inputs } }`
-- If it's `chat({ param1, param2 })` → use direct properties `{ "param1": ..., "param2": ... }`
+**Missing Credentials:** User needs to add API keys at http://localhost:3000/settings/credentials
 
-**Example:**
-```json
-// ❌ Wrong for chat(options: AIChatOptions)
-"inputs": {
-  "messages": [...],
-  "model": "gpt-4o-mini"
-}
+**Module Not Found:** Re-search module, check lowercase paths: `social.twitter.postTweet`
 
-// ✅ Correct
-"inputs": {
-  "options": {
-    "messages": [...],
-    "model": "gpt-4o-mini"
-  }
-}
-```
+**Chat Test Failures:** Known test script limitation with AI SDK. If validation passes, proceed to import.
 
----
-
-### AI SDK / Invalid Prompt Errors
-
-**Error:** `Invalid prompt: The messages must be a ModelMessage[]. If you have passed a UIMessage[], you can use convertToModelMessages`
-
-**Cause:** Test script limitation with chat workflows. The AI SDK is receiving an unexpected message format during testing.
-
-**When this happens:**
-1. Check validation passed ✅
-2. Check workflow structure is correct ✅
-3. **Proceed to import** - it will work in production
-
-**This is a known limitation of the test script, not your workflow.**
-
----
-
-### AI SDK String/Object Type Errors
-
-**Error:** `str.split is not a function` or `Cannot read properties of undefined (reading 'slice')`
-
-**Cause:** You're passing an AI SDK object to a function expecting a string. AI SDK returns `{ content, usage, ... }`, not a plain string.
-
-**Fix:** Access the `.content` property:
-
-```json
-// ❌ Wrong
-{
-  "module": "utilities.string-utils.wordCount",
-  "inputs": {
-    "str": "{{aiOutput}}"  // aiOutput is an object!
-  }
-}
-
-// ✅ Correct
-{
-  "module": "utilities.string-utils.wordCount",
-  "inputs": {
-    "str": "{{aiOutput.content}}"  // Extract the string
-  }
-}
-```
-
-**This applies to ANY function expecting a string when you're using AI SDK output:**
-- `utilities.string-utils.*` → Use `.content`
-- `utilities.array-utils.concat` with strings → Use `.content`
-- `social.*.send` with AI-generated messages → Use `.content`
-
----
-
-### Array Function Errors
-
-**Error:** `arr.map is not a function` or `Cannot read properties of undefined (reading 'includes')`
-
-**Cause:** The input is not an array, or you're using the wrong parameter format.
-
-**Common causes:**
-
-1. **API returns object instead of array:**
-   ```json
-   // Reddit API returns: { data: { children: [...] } }
-   // NOT: [...]
-   ```
-   **Fix:** Use API-specific path or switch to deterministic data generation
-
-2. **Wrong parameter format for array functions:**
-   ```json
-   // ❌ Wrong - intersection uses rest parameters
-   {
-     "module": "utilities.array-utils.intersection",
-     "inputs": {
-       "array1": "{{a}}",
-       "array2": "{{b}}"
-     }
-   }
-
-   // ✅ Correct
-   {
-     "module": "utilities.array-utils.intersection",
-     "inputs": {
-       "arrays": ["{{a}}", "{{b}}"]
-     }
-   }
-   ```
-
-3. **Check function signature:**
-   - `intersection(...arrays)` → `{ "arrays": [arr1, arr2] }`
-   - `difference(arr1, arr2)` → `{ "arr1": "{{a}}", "arr2": "{{b}}" }`
-   - `union(arr1, arr2)` → `{ "arr1": "{{a}}", "arr2": "{{b}}" }`
-
----
-
-### zipToObjects Character Array Bug
-
-**Error:** Workflow creates 100+ objects instead of expected count, or each row has single characters instead of full strings.
-
-**Cause:** Passing a string directly to `zipToObjects` treats it as an array of characters.
-
-**Example of the bug:**
-```json
-{
-  "fieldArrays": {
-    "id": [1, 2, 3],
-    "title": ["A", "B", "C"],
-    "summary": "This is a summary"  // ❌ Creates 18 objects (one per char)
-  }
-}
-// Result: [{ id: 1, title: "A", summary: "T" }, { summary: "h" }, { summary: "i" }, ...]
-```
-
-**Fix:** Wrap string values in arrays, repeating for each row:
-```json
-{
-  "fieldArrays": {
-    "id": [1, 2, 3],
-    "title": ["A", "B", "C"],
-    "summary": ["This is a summary", "This is a summary", "This is a summary"]
-  }
-}
-// Result: [{ id: 1, title: "A", summary: "This is a summary" }, ...]
-```
-
-**For AI-generated content that should be the same for all rows:**
-```json
-{
-  "fieldArrays": {
-    "id": [1, 2, 3, 4, 5],
-    "conclusion": [
-      "{{aiConclusion.content}}",
-      "{{aiConclusion.content}}",
-      "{{aiConclusion.content}}",
-      "{{aiConclusion.content}}",
-      "{{aiConclusion.content}}"
-    ]
-  }
-}
-```
-
----
-
-### Variable Reference Warnings
-
-**Warning:** `Step 1 (chat): References undeclared variable "trigger"`
-
-**Cause:** Validator doesn't recognize trigger variables as they're injected at runtime.
-
-**Action:** This is expected for workflows with `trigger.type = "chat"`, `"webhook"`, etc. Safe to ignore if:
-- Trigger config has matching `inputVariable`
-- Variables use correct syntax: `{{trigger.inputVariable}}`
-
----
-
-### Missing Credentials
-
-**Error:** `Missing API key` or `Authentication failed`
-
-**Cause:** User hasn't configured required credentials.
-
-**Fix:** Tell user to:
-1. Visit http://localhost:3000/settings/credentials
-2. Add the required API keys/tokens
-3. Test workflow again
-
----
-
-### Module Not Found
-
-**Error:** `Module "category.module.function" not found`
-
-**Cause:**
-- Typo in module path
-- Module doesn't exist
-- Case sensitivity (must be lowercase)
-
-**Fix:**
-1. Search again: `npx tsx scripts/search-modules.ts "keyword"`
-2. Verify exact module path from search results
-3. Check for typos (e.g., `social.twitter.postTweet` not `Social.Twitter.PostTweet`)
-4. If module truly doesn't exist, use `utilities.http.*` for custom API calls
-
----
-
-### Validation Errors
-
-**Error:** `Invalid JSON structure` or `Missing required field`
-
-**Cause:** Malformed JSON or missing required workflow fields.
-
-**Fix:**
-- Check JSON syntax (trailing commas, quotes, brackets)
-- Ensure `version`, `name`, `description`, `trigger`, `config` all present
-- Verify `trigger` is at top level, not inside `config`
-- Check all step IDs are unique
-
----
-
-### Service Not Running Errors
-
-**Error:** `Connection refused` or `ECONNREFUSED`
-
-**Cause:** Required services (Docker, Next.js) not running.
-
-**Fix:** Run pre-flight checks and start services:
-```bash
-npm run docker:start
-npm run dev:full
-```
-
----
-
-### Output Display Context Leak
-
-**Error:** Workflow output shows entire context object instead of formatted table/list
-
-**Cause:** Missing or incorrectly placed `returnValue` configuration
-
-**Fix:**
-1. **Add `returnValue` at config level:**
-   ```json
-   {
-     "config": {
-       "steps": [...],
-       "returnValue": "{{yourArrayVariable}}",  // ✅ Correct location
-       "outputDisplay": {
-         "type": "table",
-         "columns": [...]
-       }
-     }
-   }
-   ```
-
-2. **NOT inside outputDisplay:**
-   ```json
-   {
-     "config": {
-       "steps": [...],
-       "outputDisplay": {
-         "returnValue": "{{data}}",  // ❌ Wrong - gets ignored
-         "type": "table"
-       }
-     }
-   }
-   ```
-
-3. **Auto-fix will detect and fix this:**
-   ```bash
-   npx tsx scripts/auto-fix-workflow.ts workflow/{filename} --write
-   ```
-
-**Why it happens:**
-- Without `returnValue`, executor returns ALL variables
-- Renderer can only auto-extract if variable uses magic name
-- Magic names: `finalAnalysisTable`, `finalTableData`, `tableData`, `results`, `data`, `output`
-- Custom names like `sortedProducts` require explicit `returnValue`
-
----
-
-### Import / File Path Errors
-
-**Error:** `Cannot import workflow` or `File not found` or `Failed to create diff`
-
-**Cause:** Workflow saved to wrong directory (temp directory or absolute path instead of relative path).
-
-**Fix:**
-1. Workflows MUST be saved to `workflow/{filename}` relative to project root
-2. Check file path - should be: `workflow/my-workflow.json`
-3. NOT temp directories: `/tmp/`, `/var/tmp/`, etc.
-4. NOT absolute paths: `/Users/...`, `~/...`
-5. Re-save file to correct location
-
-**Why this matters:**
-- Import script expects relative paths
-- Validation tools need project-relative paths
-- Diff comparison requires consistent directory structure
-- Scripts execute from project root
-
----
-
-## Error Handling Strategy
-
-When you encounter an error:
-
-1. **Identify the error type** (use table above)
-2. **Check if it's a known limitation** (chat workflow tests)
-3. **If fixable:** Apply the fix and re-test
-4. **If not fixable:** Explain limitation and proceed if safe
-5. **Never simplify the workflow** - fix the actual issue
+**Output Display Issues:** Add `returnValue` at config level, not inside outputDisplay.
 
 ## Communication Style
 

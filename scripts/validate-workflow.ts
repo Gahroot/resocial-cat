@@ -310,6 +310,26 @@ async function validateWorkflow(workflowJson: string): Promise<void> {
       console.log('✅ All variable references are valid');
     }
 
+    // Validate returnValue configuration
+    console.log('\n🔍 Checking returnValue configuration...');
+    const returnValue = (workflow.config as { returnValue?: string }).returnValue;
+    if (!returnValue) {
+      console.log('\n⚠️  Missing returnValue - workflow will use auto-detection\n');
+      console.log('   Auto-detection filters out internal variables (user, trigger, credentials)');
+      console.log('   but it\'s better to explicitly specify what to return.\n');
+      console.log('   💡 Recommended: Add returnValue to config:');
+
+      // Suggest based on last step
+      const lastStep = workflow.config.steps[workflow.config.steps.length - 1];
+      if (lastStep.outputAs) {
+        console.log(`   📝   "returnValue": "{{${lastStep.outputAs}}}"`);
+      } else {
+        console.log('   📝   "returnValue": "{{yourVariableName}}"');
+      }
+    } else {
+      console.log(`✅ returnValue configured: ${returnValue}`);
+    }
+
     // Validate output display configuration
     console.log('\n🔍 Checking output display configuration...');
     const displayWarnings = validateOutputDisplay(workflow);
