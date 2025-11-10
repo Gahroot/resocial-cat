@@ -101,12 +101,11 @@ export default function WorkflowsPage() {
 
     try {
       const text = await file.text();
-      const workflowJson = JSON.parse(text);
 
       const response = await fetch('/api/workflows/import', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ workflowJson }),
+        body: JSON.stringify({ workflowJson: text }),
       });
 
       if (!response.ok) {
